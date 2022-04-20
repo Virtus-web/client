@@ -46,7 +46,7 @@ class VideoUpload extends Component {
         }
     }
 
-    fileUploadHandler(event) {
+    fileUploadHandler() {
         const data = new FormData()
         for (let i = 0; i < this.state.selectedVideos.length; i++) {
             data.append('file', this.state.selectedVideos[i]);
