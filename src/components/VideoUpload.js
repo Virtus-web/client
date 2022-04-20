@@ -1,17 +1,69 @@
 import { useState } from 'react'
-// import { singleFileUpload, getSingleFiles } from '../data/api'
-import { singleFileUpload } from '../data/api'
-// import { ToastContainer } from 'react-toastify'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
+import axios from 'axios'
 
 
-const VideoUpload = (props) => {
+
+// const getSingleFiles = async () => {
+//     try {
+//         const {data} = await axios.get(apiUrl)
+//         return data
+//     } catch (error) {
+//         throw error
+//     }
+// }
+
+
+const VideoUpload = () => {
 
     const [singleFile, setSingleFile] = useState('')
+
+    const [filePath, setFilePath] = useState("");
+    const [fileName, setFileName] = useState("");
+    // const [duration, setDuration] = useState("");
+    // const [thumbnail, setThumbnail] = useState("");
+
+    const apiUrl = 'http://localhost:3001/api/video/'
+
+    const singleFileUpload = async (data, options) => {
+        try {
+            await axios
+            .post(apiUrl + 'uploadvideos', data, options)
+            .then(response => {
+                console.log(response)
+                toast.success('Upload Successful', { position: toast.POSITION.BOTTOM_RIGHT })
+                if (response.data.success) {
+                    setFilePath(response.data.url)
+                    setFileName(response.data.fileName)
+                    console.log(filePath)
+                    console.log(fileName)
+        
+                    const variable = {
+                        url: response.data.url
+                    }
+                    axios
+                    .post(apiUrl + 'thumbnail', variable)
+                    .then(response => {
+                        if (response.data.success) {
+                            // setDuration(response.data.fileDuration)
+                            // setThumbnail(response.data.url)
+                        } else {
+                            alert('Failed to make the thumbnails')
+                        }
+                    })
+
+                } else {
+                    alert('Failed to upload video')
+                }
+            })
+        } catch (error) {
+            throw error
+        }
+    }
     
     const SingleFileChange = (e) => {
-        console.log(e.target.files)
+        console.log(e.target.files[0])
         setSingleFile(e.target.files[0]);
     }
 
@@ -19,11 +71,10 @@ const VideoUpload = (props) => {
             header: { 'content-type': 'multipart/form-data' }
         }
 
-    const uploadSingleFile = async () => {
+    const uploadSingleFile = () => {
         const formData = new FormData()
         formData.append('file', singleFile)
-        await singleFileUpload(formData, config)
-        toast.info('Vidéo chargée', { position: toast.POSITION.BOTTOM_RIGHT })
+        singleFileUpload(formData, config)
         // getSingleFiles()
     }
 
