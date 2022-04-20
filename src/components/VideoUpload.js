@@ -1,116 +1,111 @@
-import { useState } from 'react'
-import { ToastContainer, toast } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
 import axios from 'axios'
+import { Component, Fragment } from 'react'
+import { Progress } from 'reactstrap'
+import { ToastContainer, toast } from 'react-toastify'
 
+import 'react-toastify/dist/ReactToastify.css'
 
+class VideoUpload extends Component {
 
-// const getSingleFiles = async () => {
-//     try {
-//         const {data} = await axios.get(apiUrl)
-//         return data
-//     } catch (error) {
-//         throw error
-//     }
-// }
+    state = {
+        selectedVideos: null,
+        loaded: 0
+    }
 
-//PLUS
+    maxSelectFile(event) {
 
+        let files = event.target.files
+        if (files.length > 1) {
+            toast.error('Maximum 1 file is allowed')
+            event.target.value = null
+            return false
 
-const VideoUpload = () => {
-
-    const [singleFile, setSingleFile] = useState('')
-
-    const [filePath, setFilePath] = useState("");
-    const [fileName, setFileName] = useState("");
-    // const [duration, setDuration] = useState("");
-    // const [thumbnail, setThumbnail] = useState("");
-
-    const apiUrl = 'http://localhost:3001/api/video/'
-
-    const singleFileUpload = async (data, options) => {
-        try {
-            await axios
-            .post(apiUrl + 'uploadvideos', data, options)
-            .then(response => {
-                console.log(response)
-                toast.success('Upload Successful', { position: toast.POSITION.BOTTOM_RIGHT })
-                if (response.data.success) {
-                    setFilePath(response.data.url)
-                    setFileName(response.data.fileName)
-                    console.log(filePath)
-                    console.log(fileName)
-        
-                    const variable = {
-                        url: response.data.url
-                    }
-                    axios
-                    .post(apiUrl + 'thumbnail', variable)
-                    .then(response => {
-                        if (response.data.success) {
-                            // setDuration(response.data.fileDuration)
-                            // setThumbnail(response.data.url)
-                        } else {
-                            alert('Failed to make the thumbnails')
-                        }
-                    })
-
-                } else {
-                    alert('Failed to upload video')
+        } else {
+            let err = ''
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > 52428800) {
+                    err += files[i].name + ', '
                 }
+            }
+            if (err !== '') {
+                event.target.value = null
+                toast.error(err + " is/are too large. Please select file size < 50Mb")
+            }
+        }
+        return true
+    }
+
+
+    fileChangeHandler(event) {
+        const files = event.target.files
+        if (this.maxSelectFile(event)) {
+            this.setState({
+                selectedVideos: files,
+                loaded: 0
             })
-        } catch (error) {
-            throw error
         }
     }
-    
-    const SingleFileChange = (e) => {
-        console.log(e.target.files[0])
-        setSingleFile(e.target.files[0]);
-    }
 
-    const config = {
-            header: { 'content-type': 'multipart/form-data' }
+    fileUploadHandler(event) {
+        const data = new FormData()
+        for (let i = 0; i < this.state.selectedVideos.length; i++) {
+            data.append('file', this.state.selectedVideos[i]);
         }
-
-    const uploadSingleFile = () => {
-        const formData = new FormData()
-        formData.append('file', singleFile)
-        singleFileUpload(formData, config)
-        // getSingleFiles()
+        axios
+        .post('http://localhost:3001/api/upload', data, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+            }, {
+            onUploadProgress: ProgressEvent => {
+                this.setState({
+                loaded: (ProgressEvent.loaded / ProgressEvent.total * 100)
+                })
+            }
+        })
+        .then(res => {
+            toast.success('Upload Successful')
+        })
+        .catch(err => {
+            toast.error(`Upload Fail with status: ${err.statusText}`)
+        })
     }
 
+    render() {
 
-    return (
-        <main role='main'>
-            <div className='container text-center'>
+        return (
+            <Fragment>
+                <div className="container mt-5">
                 <div className="form-group">
                     <ToastContainer />
                 </div>
-                <h1 className='display-4'>UPLOADS VIDEOS</h1>
-                
-                <form className='form-inline d-flex justify-content-around' encType="multipart/form-data">
-                    <div className='form-group'>
-                        <input
-                            type='file'
-                            name='file'
-                            className='form-control'
-                            accept='video/*'
-                            onChange={(e) => SingleFileChange(e)}
-                        />
-                    </div>
-                    <div className='form-group ml-3'>
-                        <button
-                        className='btn btn-outline-secondary'
-                        type='button'
-                        onClick={() => uploadSingleFile()}>upload
-                        </button>
+                <h4>Upload Video</h4>
+                <hr className="my-4" />
+
+                <form method="post" name="videoUpload" action="/api/upload" id="#" encType="multipart/form-data">
+                    <div className="form-group files">
+                    <label>Upload Your Videos Here</label>
+                    <input
+                        type="file"
+                        name="file"
+                        className="form-control"
+                        multiple="multiple"
+                        accept="video/*"
+                        onChange={this.fileChangeHandler.bind(this)} />
+                    <Progress max="100" color="success" value={this.state.loaded} className="mt-4 mb-1">
+                        {isNaN(Math.round(this.state.loaded, 2)) ? 0 : Math.round(this.state.loaded, 2)}%
+                    </Progress>
+                    <button
+                        type="button"
+                        className="btn btn-success btn-block"
+                        onClick={this.fileUploadHandler.bind(this)}>Upload Video
+                    </button>
                     </div>
                 </form>
-            </div>
-        
-        </main>
-    )
+                </div>
+            </Fragment>
+        )
+    }
 }
 
 export default VideoUpload
