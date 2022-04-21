@@ -53,10 +53,6 @@ class VideoUpload extends Component {
         }
         axios
         .post('http://localhost:4000/api/upload', data, {
-            // headers: {
-            //     'Content-Type': 'application/json'
-            // }
-            // }, {
             onUploadProgress: ProgressEvent => {
                 this.setState({
                 loaded: (ProgressEvent.loaded / ProgressEvent.total * 100)
