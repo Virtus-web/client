@@ -52,11 +52,11 @@ class VideoUpload extends Component {
             data.append('file', this.state.selectedVideos[i]);
         }
         axios
-        .post('http://localhost:3001/api/upload', data, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-            }, {
+        .post('http://localhost:27017/api/upload', data, {
+            // headers: {
+            //     'Content-Type': 'application/json'
+            // }
+            // }, {
             onUploadProgress: ProgressEvent => {
                 this.setState({
                 loaded: (ProgressEvent.loaded / ProgressEvent.total * 100)
